@@ -146,19 +146,14 @@
                 </div>
             </div>
 
-            <!-- Matrix Section -->
+            <!-- Matrix Section (Now Bar Charts) -->
             <div class="glass-card p-6 rounded-2xl mt-6 border-t-4 border-blue-500">
-                <div class="flex items-center gap-2 mb-4">
-                    <i class="fas fa-table text-blue-600 text-xl"></i>
-                    <h3 class="text-lg font-bold text-slate-800">Matriks Remunerasi & Benefit Per Lembaga</h3>
+                <div class="flex items-center gap-2 mb-6">
+                    <i class="fas fa-align-left text-blue-600 text-xl"></i>
+                    <h3 class="text-lg font-bold text-slate-800">Total Komponen Remunerasi & Benefit</h3>
                 </div>
-                <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                    <table class="w-full text-sm text-left text-slate-600 whitespace-nowrap">
-                        <thead class="text-xs text-slate-700 uppercase sticky top-0 shadow-sm" id="matrix-head">
-                        </thead>
-                        <tbody id="matrix-body">
-                        </tbody>
-                    </table>
+                <div id="full-remunerasi-bars" class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                    <!-- Bars injected by JS -->
                 </div>
             </div>
         </div>
@@ -654,44 +649,38 @@
                 }
             });
 
-            // Render Matrix Table
-            const mHead = document.getElementById('matrix-head');
-            const mBody = document.getElementById('matrix-body');
-            const remArr = Array.from(allRem);
-            const benArr = Array.from(allBen);
-
-            let theadHTML = `<tr><th class="px-4 py-4 border-b border-slate-300 bg-slate-100 z-10 font-black text-slate-800" style="position: sticky; left: 0;">Nama Lembaga</th>`;
-            remArr.forEach(r => theadHTML += `<th class="px-3 py-2 border-b border-l border-slate-300 bg-blue-50 text-blue-800 text-[10px] text-center align-bottom"><span style="writing-mode: vertical-rl; transform: rotate(180deg);" class="h-28 mx-auto pb-2">${r}</span></th>`);
-            benArr.forEach(b => theadHTML += `<th class="px-3 py-2 border-b border-l border-slate-300 bg-emerald-50 text-emerald-800 text-[10px] text-center align-bottom"><span style="writing-mode: vertical-rl; transform: rotate(180deg);" class="h-28 mx-auto pb-2">${b}</span></th>`);
-            theadHTML += `</tr>`;
+            // Render Full List of Components as HTML Bars
+            const barContainer = document.getElementById('full-remunerasi-bars');
+            const allItems = [...Object.entries(remCount), ...Object.entries(benCount)];
+            allItems.sort((a,b) => b[1] - a[1]); // sort by count descending
             
-            // Add Sub-header for groupings
-            let theadGroupHTML = `<tr><th class="px-4 py-1 border-b border-slate-300 bg-slate-100" style="position: sticky; left: 0;"></th>`;
-            if (remArr.length > 0) theadGroupHTML += `<th colspan="${remArr.length}" class="px-2 py-1 border-b border-l border-slate-300 bg-blue-600 text-white text-center text-xs font-bold">KOMPONEN REMUNERASI</th>`;
-            if (benArr.length > 0) theadGroupHTML += `<th colspan="${benArr.length}" class="px-2 py-1 border-b border-l border-slate-300 bg-emerald-600 text-white text-center text-xs font-bold">BENEFIT</th>`;
-            theadGroupHTML += `</tr>`;
+            // Cegah error jika data kosong
+            if(allItems.length === 0) {
+                barContainer.innerHTML = '<p class="text-slate-400 text-sm">Tidak ada data komponen.</p>';
+                return;
+            }
             
-            mHead.innerHTML = theadGroupHTML + theadHTML;
-
-            let tbodyHTML = '';
-            surveyData.forEach(d => {
-                let rStr = (getVal(d, 'Komponen remunerasi') || '').toLowerCase();
-                let bStr = (getVal(d, 'Benefit apa saja') || '').toLowerCase();
+            const maxCount = Math.max(...allItems.map(x => x[1]));
+            const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-rose-500', 'bg-indigo-500', 'bg-teal-500', 'bg-orange-500'];
+            
+            let barsHTML = '';
+            allItems.forEach((item, idx) => {
+                const name = item[0].toUpperCase();
+                const count = item[1];
+                const widthPct = Math.max(5, (count / maxCount) * 100);
+                const colorClass = colors[idx % colors.length];
                 
-                tbodyHTML += `<tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors">`;
-                tbodyHTML += `<td class="px-4 py-3 font-bold text-slate-800 bg-white" style="position: sticky; left: 0; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">${d['Nama Lembaga']}</td>`;
-                
-                remArr.forEach(r => {
-                    let hasIt = rStr.includes(r.toLowerCase()) ? '<i class="fas fa-check-circle text-blue-500 text-lg"></i>' : '<span class="text-slate-200">-</span>';
-                    tbodyHTML += `<td class="px-2 py-3 text-center border-l border-slate-100 bg-blue-50/20">${hasIt}</td>`;
-                });
-                benArr.forEach(b => {
-                    let hasIt = bStr.includes(b.toLowerCase()) ? '<i class="fas fa-check-circle text-emerald-500 text-lg"></i>' : '<span class="text-slate-200">-</span>';
-                    tbodyHTML += `<td class="px-2 py-3 text-center border-l border-slate-100 bg-emerald-50/20">${hasIt}</td>`;
-                });
-                tbodyHTML += `</tr>`;
+                barsHTML += `
+                <div class="flex items-center gap-4 group">
+                    <div class="w-1/3 text-[11px] font-black text-slate-600 truncate text-right tracking-wider" title="${name}">${name}</div>
+                    <div class="w-2/3 flex items-center">
+                        <div class="${colorClass} h-6 rounded-r-md flex items-center px-3 text-xs text-white font-black shadow-sm group-hover:opacity-80 transition-opacity" style="width: ${widthPct}%">
+                            ${count} OPZ
+                        </div>
+                    </div>
+                </div>`;
             });
-            mBody.innerHTML = tbodyHTML;
+            barContainer.innerHTML = barsHTML;
         }
 
         // ================= POTRET DETAIL =================
