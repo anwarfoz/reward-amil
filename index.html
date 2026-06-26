@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Profiling OPZ & Reward Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .pillar-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .tab-btn.active {
+            border-bottom: 2px solid #3b82f6;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-800 leading-tight">Dashboard Profiling OPZ</h1>
+                        <p class="text-xs text-slate-500">Reward Management Analysis</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 text-sm text-slate-500">
+                    <div id="status-container" class="flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full">
+                        <i class="fas fa-sync-alt animate-spin text-blue-500" id="sync-icon" style="display:none;"></i>
+                        <span id="last-updated" class="font-medium text-xs">Belum ada data</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- Controls & Sync -->
+        <div class="glass-card rounded-2xl p-6 mb-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="w-full md:w-1/2 flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-1">
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Pilihan 1: Sync Otomatis</label>
+                    <button onclick="autoSyncData()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2">
+                        <i class="fas fa-cloud-download-alt"></i> Sync dari Google Sheets
+                    </button>
+                </div>
+                <div class="text-slate-400 text-sm font-bold pb-2 hidden md:block">ATAU</div>
+                <div class="flex-1">
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Pilihan 2: Upload CSV</label>
+                    <input type="file" id="csv-upload" accept=".csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer">
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="flex gap-4 w-full md:w-1/2 justify-end">
+                <div class="text-center px-4 border-r border-slate-200">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wide mb-1">Total OPZ</p>
+                    <p class="text-3xl font-black text-slate-800" id="stat-total">-</p>
+                </div>
+                <div class="text-center px-4 border-r border-slate-200">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wide mb-1">Skala Nasional</p>
+                    <p class="text-3xl font-black text-blue-600" id="stat-nasional">-</p>
+                </div>
+                <div class="text-center px-4">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wide mb-1">Skala Daerah</p>
+                    <p class="text-3xl font-black text-emerald-600" id="stat-daerah">-</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="border-b border-slate-200 mb-6 flex gap-6">
+            <button onclick="switchTab('overview')" id="tabbtn-overview" class="tab-btn active pb-3 px-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
+                <i class="fas fa-chart-bar mr-2"></i>Dashboard Umum
+            </button>
+            <button onclick="switchTab('potret')" id="tabbtn-potret" class="tab-btn pb-3 px-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
+                <i class="fas fa-id-card mr-2"></i>Potret Per Lembaga
+            </button>
+        </div>
+
+        <!-- ================= TAB: OVERVIEW ================= -->
+        <div id="tab-overview" class="space-y-6 animate-fade-in">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Chart 1 -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4 text-center">Distribusi Jenis LAZ</h3>
+                    <div class="relative h-64">
+                        <canvas id="chartJenisLaz"></canvas>
+                    </div>
+                </div>
+                <!-- Chart 2 -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4 text-center">Ketersediaan Struktur Gaji</h3>
+                    <div class="relative h-64">
+                        <canvas id="chartStrukturGaji"></canvas>
+                    </div>
+                </div>
+                <!-- Chart 3 -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4 text-center">Ketersediaan Insentif vs Bonus</h3>
+                    <div class="relative h-64">
+                        <canvas id="chartInsentifBonus"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Chart 4 -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4 text-center">Rata-rata Waktu Pelatihan per Amil</h3>
+                    <div class="relative h-64">
+                        <canvas id="chartWaktuPelatihan"></canvas>
+                    </div>
+                </div>
+                <!-- Chart 5 -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4 text-center">Top Komponen Remunerasi & Benefit</h3>
+                    <div class="relative h-64">
+                        <canvas id="chartTopRemunerasi"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matrix Section -->
+            <div class="glass-card p-6 rounded-2xl mt-6 border-t-4 border-blue-500">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="fas fa-table text-blue-600 text-xl"></i>
+                    <h3 class="text-lg font-bold text-slate-800">Matriks Remunerasi & Benefit Per Lembaga</h3>
+                </div>
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-sm text-left text-slate-600 whitespace-nowrap">
+                        <thead class="text-xs text-slate-700 uppercase sticky top-0 shadow-sm" id="matrix-head">
+                        </thead>
+                        <tbody id="matrix-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB: POTRET ================= -->
+        <div id="tab-potret" class="hidden space-y-6 animate-fade-in">
+            <div class="glass-card p-6 rounded-2xl bg-blue-50 border-blue-100 flex flex-col md:flex-row items-center gap-4">
+                <label for="lembaga-select" class="font-bold text-blue-900 whitespace-nowrap">Pilih OPZ:</label>
+                <div class="relative w-full max-w-md">
+                    <select id="lembaga-select" disabled class="block w-full pl-4 pr-10 py-3 text-base border-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl bg-white appearance-none font-bold text-slate-800 shadow-sm cursor-pointer">
+                        <option value="">-- Load data terlebih dahulu --</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State for Potret -->
+            <div id="empty-state" class="glass-card rounded-2xl p-16 text-center">
+                <div class="w-20 h-20 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-hand-pointer text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Pilih Lembaga</h3>
+                <p class="text-slate-500 max-w-sm mx-auto">Pilih nama lembaga dari dropdown di atas untuk melihat potret kondisi spesifik lembaga tersebut.</p>
+            </div>
+
+            <!-- Dashboard Content (Hidden until selected) -->
+            <div id="dashboard-content" class="hidden space-y-8">
+                <!-- Header Profile -->
+                <div class="glass-card rounded-2xl p-8 border-l-4 border-blue-500 relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 text-slate-100 opacity-50 z-0">
+                        <i class="fas fa-building text-9xl"></i>
+                    </div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span id="badge-jenis" class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 uppercase tracking-wider">Jenis LAZ</span>
+                            <span class="text-slate-400 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> <span id="val-wilayah">Wilayah</span></span>
+                        </div>
+                        <h2 id="val-nama-lembaga" class="text-4xl font-extrabold text-slate-800 mb-1">Nama Lembaga</h2>
+                        <p class="text-slate-500 font-medium mb-6">Dilaporkan oleh: <span id="val-nama-pelapor" class="text-slate-700">Nama Pelapor</span></p>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <p class="text-xs text-slate-500 mb-1"><i class="fas fa-users mr-1"></i> Jumlah Amil</p>
+                                <p id="val-jumlah-amil" class="font-bold text-slate-800 text-lg">-</p>
+                            </div>
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <p class="text-xs text-slate-500 mb-1"><i class="fas fa-money-bill-wave mr-1"></i> Penghimpunan</p>
+                                <p id="val-penghimpunan" class="font-bold text-slate-800 text-lg">-</p>
+                            </div>
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <p class="text-xs text-slate-500 mb-1"><i class="fas fa-file-invoice-dollar mr-1"></i> Struktur Gaji</p>
+                                <p id="val-struktur-gaji" class="font-bold text-slate-800 text-lg">-</p>
+                            </div>
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <p class="text-xs text-slate-500 mb-1"><i class="fas fa-graduation-cap mr-1"></i> Sertifikasi</p>
+                                <p id="val-sertifikasi" class="font-bold text-slate-800 text-lg">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pillars Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Pillar 1: Remunerasi -->
+                    <div class="glass-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div class="pillar-header px-6 py-4 flex items-center gap-3">
+                            <div class="p-2 bg-white/20 rounded-lg"><i class="fas fa-wallet text-xl"></i></div>
+                            <h3 class="font-bold text-lg">Pilar 1: Remunerasi & Finansial</h3>
+                        </div>
+                        <div class="p-6 space-y-5">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Komponen Remunerasi</p>
+                                <div id="val-komponen-remunerasi" class="flex flex-wrap gap-2"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                    <p class="text-xs text-slate-500 mb-1">Sistem Insentif Kinerja</p>
+                                    <p id="val-insentif" class="font-semibold text-slate-800">-</p>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                    <p class="text-xs text-slate-500 mb-1">Bonus Tahunan</p>
+                                    <p id="val-bonus" class="font-semibold text-slate-800">-</p>
+                                </div>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-xl border border-red-100">
+                                <p class="text-xs font-semibold text-red-600 uppercase tracking-wider mb-2"><i class="fas fa-exclamation-triangle mr-1"></i> Tantangan Terbesar</p>
+                                <p id="val-tantangan-remunerasi" class="text-sm text-slate-700 italic">"-"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pillar 2: Benefit & Kesejahteraan -->
+                    <div class="glass-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div class="bg-gradient-to-r from-emerald-600 to-teal-500 text-white px-6 py-4 flex items-center gap-3">
+                            <div class="p-2 bg-white/20 rounded-lg"><i class="fas fa-heart text-xl"></i></div>
+                            <h3 class="font-bold text-lg">Pilar 2: Benefit Kesejahteraan</h3>
+                        </div>
+                        <div class="p-6 space-y-5">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Benefit Yang Diberikan</p>
+                                <div id="val-benefit-diberikan" class="flex flex-wrap gap-2"></div>
+                            </div>
+                            <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                                <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-2"><i class="fas fa-star mr-1"></i> Paling Dirasakan Manfaatnya</p>
+                                <p id="val-benefit-dirasakan" class="text-sm text-slate-700">"-"</p>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                <p class="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2"><i class="fas fa-rocket mr-1"></i> Ingin Dikembangkan</p>
+                                <p id="val-benefit-dikembangkan" class="text-sm text-slate-700">"-"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pillar 3: Apresiasi & Recognition -->
+                    <div class="glass-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div class="bg-gradient-to-r from-amber-500 to-orange-400 text-white px-6 py-4 flex items-center gap-3">
+                            <div class="p-2 bg-white/20 rounded-lg"><i class="fas fa-award text-xl"></i></div>
+                            <h3 class="font-bold text-lg">Pilar 3: Apresiasi & Recognition</h3>
+                        </div>
+                        <div class="p-6 space-y-5">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Program Apresiasi</p>
+                                <div id="val-program-apresiasi" class="flex flex-wrap gap-2"></div>
+                            </div>
+                            <div class="bg-amber-50 p-4 rounded-xl border border-amber-100">
+                                <p class="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-2"><i class="fas fa-trophy mr-1"></i> Paling Berdampak</p>
+                                <p id="val-apresiasi-berdampak" class="text-sm text-slate-700 font-medium">"-"</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Praktik Recognition Terbaik</p>
+                                <p id="val-praktik-recognition" class="text-sm text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100">"-"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pillar 4: Pengembangan Karir (L&D) -->
+                    <div class="glass-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div class="bg-gradient-to-r from-purple-600 to-indigo-500 text-white px-6 py-4 flex items-center gap-3">
+                            <div class="p-2 bg-white/20 rounded-lg"><i class="fas fa-route text-xl"></i></div>
+                            <h3 class="font-bold text-lg">Pilar 4: Pengembangan & Karir</h3>
+                        </div>
+                        <div class="p-6 space-y-5">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                    <p class="text-xs text-slate-500 mb-1">Learning Roadmap</p>
+                                    <p id="val-roadmap" class="font-semibold text-slate-800">-</p>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                    <p class="text-xs text-slate-500 mb-1">Waktu Pelatihan/Tahun</p>
+                                    <p id="val-waktu-pelatihan" class="font-semibold text-slate-800">-</p>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                    <p class="text-xs text-slate-500 mb-1">Jenjang Karir</p>
+                                    <p id="val-jenjang-karir" class="font-semibold text-slate-800">-</p>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                    <p class="text-xs text-slate-500 mb-1">Talent Pool / Succession</p>
+                                    <p id="val-talent-pool" class="font-semibold text-slate-800">-</p>
+                                </div>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                                <p class="text-xs font-semibold text-purple-700 uppercase tracking-wider mb-2"><i class="fas fa-lightbulb mr-1"></i> Program L&D Paling Berhasil</p>
+                                <p id="val-ld-berhasil" class="text-sm text-slate-700">"-"</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pillar 5: Lingkungan Kerja -->
+                    <div class="glass-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow md:col-span-2">
+                        <div class="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-6 py-4 flex items-center gap-3">
+                            <div class="p-2 bg-white/20 rounded-lg"><i class="fas fa-smile text-xl"></i></div>
+                            <h3 class="font-bold text-lg">Pilar 5: Lingkungan Kerja & Engagement</h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Program Kenyamanan Kerja</p>
+                                    <div id="val-program-kenyamanan" class="flex flex-wrap gap-2 mb-4"></div>
+                                    <div class="bg-rose-50 p-3 rounded-lg border border-rose-100 mt-2">
+                                        <p class="text-xs text-rose-700 font-semibold mb-1">Paling Berdampak pada Engagement:</p>
+                                        <p id="val-engagement-berdampak" class="text-sm text-slate-800">-</p>
+                                    </div>
+                                </div>
+                                <div class="md:col-span-2 space-y-4">
+                                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2"><i class="fas fa-thumbs-up text-pink-500 mr-1"></i> Praktik Lingkungan Kerja Terbaik</p>
+                                        <p id="val-praktik-lingkungan" class="text-sm text-slate-700">"-"</p>
+                                    </div>
+                                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2"><i class="fas fa-gift text-pink-500 mr-1"></i> Rekomendasi Program untuk LAZ Lain</p>
+                                        <p id="val-rekomendasi" class="text-sm text-slate-700 font-medium italic">"-"</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-500">
+            Dibuat untuk analisis Reward Management OPZ.
+        </div>
+    </footer>
+
+    <script>
+        // Google Sheets public CSV link
+        const sheetsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYT39H_cY9xN-hSK6LSb9xwk32HQ8MWNE-fjtH5PUx3OCKySf-BHTGtiG-HWJWJNuVY6dL6RharuNX/pub?output=csv';
+        // Menggunakan corsproxy.io untuk bypass CORS
+        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(sheetsUrl);
+
+        let surveyData = [];
+        let charts = {}; // Store chart instances
+
+        function switchTab(tabId) {
+            document.getElementById('tab-overview').classList.add('hidden');
+            document.getElementById('tab-potret').classList.add('hidden');
+            document.getElementById('tabbtn-overview').classList.remove('active');
+            document.getElementById('tabbtn-potret').classList.remove('active');
+
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.getElementById('tabbtn-' + tabId).classList.add('active');
+        }
+
+        function setStatus(msg, type='info') {
+            const el = document.getElementById('last-updated');
+            const icon = document.getElementById('sync-icon');
+            el.textContent = msg;
+            el.className = 'font-medium text-xs';
+            if(type === 'error') el.classList.add('text-red-600');
+            else if(type === 'success') el.classList.add('text-emerald-600');
+            else el.classList.add('text-slate-600');
+            
+            if(type === 'loading') icon.style.display = 'inline-block';
+            else icon.style.display = 'none';
+        }
+
+        // Fungsi bantu untuk mendapatkan nilai dari object berdasarkan key
+        function getVal(row, keyFragment) {
+            const key = Object.keys(row).find(k => k.toLowerCase().includes(keyFragment.toLowerCase()));
+            return key ? row[key] : '-';
+        }
+
+        function processData(dataRaw) {
+            // Bersihkan spasi di nama kolom
+            const cleanData = dataRaw.map(row => {
+                const newRow = {};
+                for (let key in row) {
+                    newRow[key.trim()] = row[key];
+                }
+                return newRow;
+            });
+
+            surveyData = cleanData.filter(row => row['Nama Lembaga'] && row['Nama Lembaga'].trim() !== '');
+            
+            if(surveyData.length === 0) {
+                throw new Error("Data kosong atau format kolom tidak sesuai.");
+            }
+
+            // Update Stats
+            document.getElementById('stat-total').textContent = surveyData.length;
+            document.getElementById('stat-nasional').textContent = surveyData.filter(d => (d['Jenis LAZ'] || '').toLowerCase().includes('nasional')).length;
+            document.getElementById('stat-daerah').textContent = surveyData.filter(d => !(d['Jenis LAZ'] || '').toLowerCase().includes('nasional')).length;
+
+            // Populate Select (Potret)
+            const select = document.getElementById('lembaga-select');
+            select.innerHTML = '<option value="">-- Pilih Nama Lembaga --</option>';
+            select.disabled = false;
+            
+            surveyData.sort((a, b) => a['Nama Lembaga'].localeCompare(b['Nama Lembaga']));
+            surveyData.forEach((row, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = row['Nama Lembaga'];
+                select.appendChild(option);
+            });
+
+            // Re-render Charts
+            renderOverviewCharts();
+        }
+
+        async function fetchWithFallback(url) {
+            const urlsToTry = [
+                // 1. Direct fetch (berhasil jika di-hosting online)
+                url,
+                // 2. Proxy AllOrigins (biasanya sangat stabil untuk file:// lokal)
+                'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+                // 3. Proxy Corsproxy.io
+                'https://corsproxy.io/?' + encodeURIComponent(url)
+            ];
+
+            let lastError = null;
+            for (let targetUrl of urlsToTry) {
+                try {
+                    const response = await fetch(targetUrl);
+                    if (response.ok) {
+                        return await response.text();
+                    }
+                } catch (e) {
+                    lastError = e;
+                    console.warn(`Gagal fetch dari ${targetUrl}, mencoba cara lain...`);
+                }
+            }
+            throw new Error(lastError ? lastError.message : "Semua proxy gagal");
+        }
+
+        async function autoSyncData() {
+            setStatus('Menyinkronkan data...', 'loading');
+            try {
+                const csvText = await fetchWithFallback(sheetsUrl);
+                
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        try {
+                            processData(results.data);
+                            const now = new Date();
+                            setStatus(`Tersinkronisasi otomatis: ${now.toLocaleTimeString()}`, 'success');
+                        } catch(e) {
+                            setStatus("Gagal memproses data: " + e.message, 'error');
+                        }
+                    },
+                    error: function(err) {
+                        setStatus("Gagal parsing CSV: " + err.message, 'error');
+                    }
+                });
+            } catch (error) {
+                console.error("Sync Error:", error);
+                setStatus('Gagal sync otomatis. Gunakan opsi Upload CSV atau online-kan HTML.', 'error');
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            setStatus('Memproses file CSV...', 'loading');
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    try {
+                        processData(results.data);
+                        setStatus(`Berhasil memuat file: ${file.name}`, 'success');
+                    } catch (err) {
+                        setStatus("Gagal memproses file: " + err.message, 'error');
+                    }
+                },
+                error: function(err) {
+                    setStatus("Gagal membaca file: " + err.message, 'error');
+                }
+            });
+        }
+
+        // ================= CHART RENDERING =================
+        function destroyChart(id) {
+            if (charts[id]) {
+                charts[id].destroy();
+            }
+        }
+
+        function renderOverviewCharts() {
+            // 1. Jenis LAZ
+            const countJenis = {};
+            surveyData.forEach(d => {
+                const j = d['Jenis LAZ'] || 'Tidak Diketahui';
+                countJenis[j] = (countJenis[j] || 0) + 1;
+            });
+            destroyChart('chartJenisLaz');
+            charts['chartJenisLaz'] = new Chart(document.getElementById('chartJenisLaz'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(countJenis),
+                    datasets: [{
+                        data: Object.values(countJenis),
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 2. Struktur Gaji
+            let gajiYa = 0, gajiTidak = 0;
+            surveyData.forEach(d => {
+                const v = (getVal(d, 'struktur gaji') || '').toLowerCase();
+                if(v.includes('ya') || v.includes('ada') || v.includes('iya')) gajiYa++;
+                else gajiTidak++;
+            });
+            destroyChart('chartStrukturGaji');
+            charts['chartStrukturGaji'] = new Chart(document.getElementById('chartStrukturGaji'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Ada / Ya', 'Tidak / Belum'],
+                    datasets: [{
+                        data: [gajiYa, gajiTidak],
+                        backgroundColor: ['#10b981', '#f43f5e']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
+            });
+
+            // 3. Insentif & Bonus
+            let insentifAda = 0, bonusAda = 0;
+            surveyData.forEach(d => {
+                const ins = (getVal(d, 'insentif') || '').toLowerCase();
+                const bon = (getVal(d, 'bonus') || '').toLowerCase();
+                if(ins.includes('ya') || ins.includes('ada') || ins.includes('iya')) insentifAda++;
+                if(bon.includes('ya') || bon.includes('ada') || bon.includes('iya')) bonusAda++;
+            });
+            destroyChart('chartInsentifBonus');
+            charts['chartInsentifBonus'] = new Chart(document.getElementById('chartInsentifBonus'), {
+                type: 'bar',
+                data: {
+                    labels: ['Ada Insentif Kinerja', 'Ada Bonus Tahunan'],
+                    datasets: [{
+                        label: 'Jumlah Lembaga',
+                        data: [insentifAda, bonusAda],
+                        backgroundColor: ['#3b82f6', '#f59e0b']
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+
+            // 4. Waktu Pelatihan
+            const countWaktu = {};
+            surveyData.forEach(d => {
+                const w = getVal(d, 'waktu pelatihan') || 'Tidak Diketahui';
+                countWaktu[w] = (countWaktu[w] || 0) + 1;
+            });
+            destroyChart('chartWaktuPelatihan');
+            charts['chartWaktuPelatihan'] = new Chart(document.getElementById('chartWaktuPelatihan'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(countWaktu),
+                    datasets: [{
+                        label: 'Jumlah Lembaga',
+                        data: Object.values(countWaktu),
+                        backgroundColor: '#8b5cf6'
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 5. Matriks Remunerasi & Benefit (Tabel & Bar Chart Top 5)
+            const remCount = {};
+            const benCount = {};
+            const allRem = new Set();
+            const allBen = new Set();
+
+            surveyData.forEach(d => {
+                let r = getVal(d, 'Komponen remunerasi');
+                if(r && r!=='-') r.split(',').forEach(x => { let val = x.trim(); if(val) { remCount[val] = (remCount[val]||0)+1; allRem.add(val); } });
+                
+                let b = getVal(d, 'Benefit apa saja');
+                if(b && b!=='-') b.split(',').forEach(x => { let val = x.trim(); if(val) { benCount[val] = (benCount[val]||0)+1; allBen.add(val); } });
+            });
+
+            // Top Chart Render
+            const topRems = Object.entries(remCount).sort((a,b) => b[1]-a[1]).slice(0, 4);
+            const topBens = Object.entries(benCount).sort((a,b) => b[1]-a[1]).slice(0, 4);
+            
+            destroyChart('chartTopRemunerasi');
+            charts['chartTopRemunerasi'] = new Chart(document.getElementById('chartTopRemunerasi'), {
+                type: 'bar',
+                data: {
+                    labels: [...topRems.map(x=>x[0]), ...topBens.map(x=>x[0])],
+                    datasets: [{
+                        label: 'Lembaga yang Memberikan',
+                        data: [...topRems.map(x=>x[1]), ...topBens.map(x=>x[1])],
+                        backgroundColor: [...topRems.map(()=>'#3b82f6'), ...topBens.map(()=>'#10b981')]
+                    }]
+                },
+                options: { 
+                    indexAxis: 'y',
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Render Matrix Table
+            const mHead = document.getElementById('matrix-head');
+            const mBody = document.getElementById('matrix-body');
+            const remArr = Array.from(allRem);
+            const benArr = Array.from(allBen);
+
+            let theadHTML = `<tr><th class="px-4 py-4 border-b border-slate-300 bg-slate-100 z-10 font-black text-slate-800" style="position: sticky; left: 0;">Nama Lembaga</th>`;
+            remArr.forEach(r => theadHTML += `<th class="px-3 py-2 border-b border-l border-slate-300 bg-blue-50 text-blue-800 text-[10px] text-center align-bottom"><span style="writing-mode: vertical-rl; transform: rotate(180deg);" class="h-28 mx-auto pb-2">${r}</span></th>`);
+            benArr.forEach(b => theadHTML += `<th class="px-3 py-2 border-b border-l border-slate-300 bg-emerald-50 text-emerald-800 text-[10px] text-center align-bottom"><span style="writing-mode: vertical-rl; transform: rotate(180deg);" class="h-28 mx-auto pb-2">${b}</span></th>`);
+            theadHTML += `</tr>`;
+            
+            // Add Sub-header for groupings
+            let theadGroupHTML = `<tr><th class="px-4 py-1 border-b border-slate-300 bg-slate-100" style="position: sticky; left: 0;"></th>`;
+            if (remArr.length > 0) theadGroupHTML += `<th colspan="${remArr.length}" class="px-2 py-1 border-b border-l border-slate-300 bg-blue-600 text-white text-center text-xs font-bold">KOMPONEN REMUNERASI</th>`;
+            if (benArr.length > 0) theadGroupHTML += `<th colspan="${benArr.length}" class="px-2 py-1 border-b border-l border-slate-300 bg-emerald-600 text-white text-center text-xs font-bold">BENEFIT</th>`;
+            theadGroupHTML += `</tr>`;
+            
+            mHead.innerHTML = theadGroupHTML + theadHTML;
+
+            let tbodyHTML = '';
+            surveyData.forEach(d => {
+                let rStr = (getVal(d, 'Komponen remunerasi') || '').toLowerCase();
+                let bStr = (getVal(d, 'Benefit apa saja') || '').toLowerCase();
+                
+                tbodyHTML += `<tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors">`;
+                tbodyHTML += `<td class="px-4 py-3 font-bold text-slate-800 bg-white" style="position: sticky; left: 0; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">${d['Nama Lembaga']}</td>`;
+                
+                remArr.forEach(r => {
+                    let hasIt = rStr.includes(r.toLowerCase()) ? '<i class="fas fa-check-circle text-blue-500 text-lg"></i>' : '<span class="text-slate-200">-</span>';
+                    tbodyHTML += `<td class="px-2 py-3 text-center border-l border-slate-100 bg-blue-50/20">${hasIt}</td>`;
+                });
+                benArr.forEach(b => {
+                    let hasIt = bStr.includes(b.toLowerCase()) ? '<i class="fas fa-check-circle text-emerald-500 text-lg"></i>' : '<span class="text-slate-200">-</span>';
+                    tbodyHTML += `<td class="px-2 py-3 text-center border-l border-slate-100 bg-emerald-50/20">${hasIt}</td>`;
+                });
+                tbodyHTML += `</tr>`;
+            });
+            mBody.innerHTML = tbodyHTML;
+        }
+
+        // ================= POTRET DETAIL =================
+        function renderBadges(commaSeparatedString, containerId, badgeClass = "bg-blue-100 text-blue-700 border-blue-200") {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            if(!commaSeparatedString || commaSeparatedString.trim() === '-') {
+                container.innerHTML = '<span class="text-sm text-slate-400 italic">Tidak ada data</span>';
+                return;
+            }
+            const items = commaSeparatedString.split(',').map(i => i.trim()).filter(i => i !== '');
+            items.forEach(item => {
+                const span = document.createElement('span');
+                span.className = `px-3 py-1 rounded-full text-xs font-medium border ${badgeClass}`;
+                span.textContent = item;
+                container.appendChild(span);
+            });
+        }
+
+        document.getElementById('lembaga-select').addEventListener('change', function(e) {
+            const idx = e.target.value;
+            if(idx === "") {
+                document.getElementById('empty-state').classList.remove('hidden');
+                document.getElementById('dashboard-content').classList.add('hidden');
+                return;
+            }
+            const data = surveyData[idx];
+            
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('dashboard-content').classList.remove('hidden');
+
+            document.getElementById('val-nama-lembaga').textContent = data['Nama Lembaga'] || '-';
+            document.getElementById('badge-jenis').textContent = data['Jenis LAZ'] || 'Tidak diketahui';
+            document.getElementById('val-wilayah').textContent = data['Wilayah Lembaga'] || '-';
+            document.getElementById('val-nama-pelapor').textContent = data['Nama Lengkap'] || '-';
+            document.getElementById('val-jumlah-amil').textContent = data['Jumlah Amil'] || '-';
+            document.getElementById('val-penghimpunan').textContent = data['Penghimpunan Tahunan'] || '-';
+            document.getElementById('val-struktur-gaji').textContent = getVal(data, 'struktur gaji');
+            document.getElementById('val-sertifikasi').textContent = getVal(data, 'sertifikasi');
+
+            renderBadges(getVal(data, 'Komponen remunerasi'), 'val-komponen-remunerasi');
+            document.getElementById('val-insentif').textContent = getVal(data, 'insentif');
+            document.getElementById('val-bonus').textContent = getVal(data, 'bonus');
+            document.getElementById('val-tantangan-remunerasi').textContent = getVal(data, 'Tantangan terbesar dalam pengelolaan remunerasi');
+
+            renderBadges(getVal(data, 'Benefit apa saja yang diberikan'), 'val-benefit-diberikan', 'bg-emerald-50 text-emerald-700 border-emerald-200');
+            document.getElementById('val-benefit-dirasakan').textContent = getVal(data, 'Benefit apa yang paling dirasakan');
+            document.getElementById('val-benefit-dikembangkan').textContent = getVal(data, 'Benefit apa yang paling ingin dikembangkan');
+
+            renderBadges(getVal(data, 'Program apresiasi'), 'val-program-apresiasi', 'bg-amber-50 text-amber-700 border-amber-200');
+            document.getElementById('val-apresiasi-berdampak').textContent = getVal(data, 'apresiasi yang paling berdampak');
+            document.getElementById('val-praktik-recognition').textContent = getVal(data, 'praktik recognition');
+
+            document.getElementById('val-roadmap').textContent = getVal(data, 'learning roadmap');
+            document.getElementById('val-waktu-pelatihan').textContent = getVal(data, 'waktu pelatihan');
+            document.getElementById('val-jenjang-karir').textContent = getVal(data, 'jenjang karir');
+            
+            const tp = getVal(data, 'talent pool');
+            const sp = getVal(data, 'succession planning');
+            document.getElementById('val-talent-pool').textContent = `${tp} / ${sp}`;
+            document.getElementById('val-ld-berhasil').textContent = getVal(data, 'program pengembangan amil yang paling berhasil');
+
+            renderBadges(getVal(data, 'mendukung kenyamanan di lingkungan kerja'), 'val-program-kenyamanan', 'bg-rose-50 text-rose-700 border-rose-200');
+            document.getElementById('val-engagement-berdampak').textContent = getVal(data, 'berdampak pada engagement');
+            document.getElementById('val-praktik-lingkungan').textContent = getVal(data, 'Praktik lingkungan kerja terbaik');
+            document.getElementById('val-rekomendasi').textContent = getVal(data, 'direkomendasikan');
+        });
+
+        // Event Listeners
+        document.getElementById('csv-upload').addEventListener('change', handleFileUpload);
+        
+        // Auto-run sync on load
+        window.onload = autoSyncData;
+    </script>
+</body>
+</html>
