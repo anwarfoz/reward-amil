@@ -507,7 +507,8 @@
             const pctGaji = total > 0 ? Math.round((gajiYa / total) * 100) : 0;
             const pctInsentif = total > 0 ? Math.round((insentifAda / total) * 100) : 0;
             const topRems = Object.entries(remCount).sort((a,b) => b[1]-a[1]).slice(0, 3).map(x => `<b>${x[0]}</b>`);
-            const topBens = Object.entries(benCount).sort((a,b) => b[1]-a[1]).slice(0, 3).map(x => `<b>${x[0]}</b>`);
+            const allRemsFormatted = Object.entries(remCount).sort((a,b) => b[1]-a[1]).map(x => `<b>${x[0]}</b> (${x[1]} OPZ)`);
+            const allBensFormatted = Object.entries(benCount).sort((a,b) => b[1]-a[1]).map(x => `<b>${x[0]}</b> (${x[1]} OPZ)`);
 
             const html = `
                 <div class="bg-blue-50 p-6 rounded-xl border border-blue-100 mb-6 shadow-inner">
@@ -523,10 +524,10 @@
                 <p>Laporan analisis Reward Management ini disusun secara otomatis berdasarkan respons dari <b>${total} Organisasi Pengelola Zakat (OPZ)</b>. Dari total lembaga yang berpartisipasi, distribusinya terdiri dari <b>${countNasional} OPZ berskala Nasional</b>, <b>${countProvinsi} OPZ berskala Provinsi</b>, dan <b>${countKabKota} OPZ di tingkat Kabupaten/Kota</b>. Secara keseluruhan, seluruh lembaga ini menaungi lebih dari <b>${totalAmil.toLocaleString('id-ID')} amil</b> yang tersebar di berbagai wilayah operasional.</p>
 
                 <h3 class="text-lg font-bold text-slate-800 mt-8 mb-2 flex items-center gap-2"><i class="fas fa-wallet text-emerald-500"></i> 2. Manajemen Remunerasi (Finansial)</h3>
-                <p>Dalam hal tata kelola finansial, sebanyak <b>${pctGaji}% (${gajiYa} lembaga)</b> tercatat telah mengimplementasikan <i>Struktur dan Skala Gaji</i> yang terstandardisasi. Terkait sistem penghargaan atas performa, <b>${insentifAda} lembaga (${pctInsentif}%)</b> memiliki program Insentif Kinerja bagi amilnya, sedangkan bonus tahunan diterapkan oleh ${bonusAda} lembaga. Komponen pendapatan yang paling dominan diberikan oleh mayoritas OPZ meliputi ${topRems.join(', ')}.</p>
+                <p>Dalam hal tata kelola finansial, sebanyak <b>${pctGaji}% (${gajiYa} lembaga)</b> tercatat telah mengimplementasikan <i>Struktur dan Skala Gaji</i> yang terstandardisasi. Terkait sistem penghargaan atas performa, <b>${insentifAda} lembaga (${pctInsentif}%)</b> memiliki program Insentif Kinerja bagi amilnya, sedangkan bonus tahunan diterapkan oleh ${bonusAda} lembaga. Adapun rincian seluruh komponen remunerasi yang diberikan oleh OPZ (dari yang terbanyak hingga sedikit) adalah: ${allRemsFormatted.join(', ')}.</p>
 
                 <h3 class="text-lg font-bold text-slate-800 mt-8 mb-2 flex items-center gap-2"><i class="fas fa-heart text-emerald-500"></i> 3. Benefit & Kesejahteraan (Non-Finansial)</h3>
-                <p>Untuk menunjang kesejahteraan amil di luar gaji pokok, lembaga-lembaga menyertakan berbagai program benefit tambahan. Berdasarkan data terbaru, benefit non-finansial yang paling banyak ditawarkan kepada amil meliputi ${topBens.join(', ')}. Program-program kesejahteraan ini dinilai sangat krusial dalam menunjang <i>employee engagement</i> dan mempertahankan motivasi amil secara jangka panjang.</p>
+                <p>Untuk menunjang kesejahteraan amil di luar gaji pokok, lembaga-lembaga menyertakan berbagai program benefit tambahan. Berdasarkan data terbaru, seluruh rincian program benefit non-finansial yang ditawarkan kepada amil meliputi: ${allBensFormatted.join(', ')}. Program-program kesejahteraan ini dinilai sangat krusial dalam menunjang <i>employee engagement</i> dan mempertahankan motivasi amil secara jangka panjang.</p>
                 
                 <h3 class="text-lg font-bold text-slate-800 mt-8 mb-2 flex items-center gap-2"><i class="fas fa-graduation-cap text-emerald-500"></i> 4. Pengembangan Kapasitas & Kompetensi</h3>
                 <p>Sebagai upaya nyata meningkatkan profesionalisme, <b>${countSertifikasi} OPZ</b> melaporkan telah mulai menganggarkan dan memfasilitasi program sertifikasi kompetensi amil. Walaupun demikian, berbagai tantangan fundamental seperti alokasi anggaran khusus pelatihan, standarisasi sertifikasi, dan ketersediaan <i>learning roadmap</i> yang terstruktur masih menjadi area kritis yang memerlukan perhatian serta kolaborasi lebih lanjut.</p>
