@@ -98,11 +98,14 @@
         </div>
 
         <!-- Tabs -->
-        <div class="border-b border-slate-200 mb-6 flex gap-6">
-            <button onclick="switchTab('overview')" id="tabbtn-overview" class="tab-btn active pb-3 px-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
+        <div class="border-b border-slate-200 mb-6 flex gap-6 overflow-x-auto">
+            <button onclick="switchTab('overview')" id="tabbtn-overview" class="tab-btn active pb-3 px-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors whitespace-nowrap">
                 <i class="fas fa-chart-bar mr-2"></i>Dashboard Umum
             </button>
-            <button onclick="switchTab('potret')" id="tabbtn-potret" class="tab-btn pb-3 px-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
+            <button onclick="switchTab('summary')" id="tabbtn-summary" class="tab-btn pb-3 px-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors whitespace-nowrap">
+                <i class="fas fa-file-alt mr-2"></i>Executive Summary
+            </button>
+            <button onclick="switchTab('potret')" id="tabbtn-potret" class="tab-btn pb-3 px-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors whitespace-nowrap">
                 <i class="fas fa-id-card mr-2"></i>Potret Per Lembaga
             </button>
         </div>
@@ -158,6 +161,16 @@
                 </div>
                 <div id="full-remunerasi-bars" class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                     <!-- Bars injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB: SUMMARY ================= -->
+        <div id="tab-summary" class="hidden space-y-6 animate-fade-in">
+            <div class="glass-card p-8 rounded-2xl border-t-4 border-emerald-500 max-w-4xl mx-auto shadow-md">
+                <h2 class="text-2xl font-black text-slate-800 mb-6 border-b border-slate-200 pb-4">Executive Summary <span class="text-sm font-medium text-slate-400 ml-2">(Auto-generated)</span></h2>
+                <div id="summary-content" class="space-y-6 text-slate-700 leading-relaxed text-justify">
+                    <p class="text-center text-slate-400 py-10">Menyusun laporan otomatis...</p>
                 </div>
             </div>
         </div>
@@ -380,8 +393,10 @@
         function switchTab(tabId) {
             document.getElementById('tab-overview').classList.add('hidden');
             document.getElementById('tab-potret').classList.add('hidden');
+            document.getElementById('tab-summary').classList.add('hidden');
             document.getElementById('tabbtn-overview').classList.remove('active');
             document.getElementById('tabbtn-potret').classList.remove('active');
+            document.getElementById('tabbtn-summary').classList.remove('active');
 
             document.getElementById('tab-' + tabId).classList.remove('hidden');
             document.getElementById('tabbtn-' + tabId).classList.add('active');
@@ -450,8 +465,73 @@
                 select.appendChild(option);
             });
 
-            // Re-render Charts
+            // Re-render Charts and Summary
             renderOverviewCharts();
+            renderExecutiveSummary();
+        }
+
+        function renderExecutiveSummary() {
+            let countNasional = 0, countProvinsi = 0, countKabKota = 0;
+            let gajiYa = 0, insentifAda = 0, bonusAda = 0;
+            let totalAmil = 0, countSertifikasi = 0;
+            const remCount = {}, benCount = {};
+            
+            surveyData.forEach(d => {
+                let j = (d['Jenis LAZ'] || '').toLowerCase();
+                if(j.includes('nasional')) countNasional++;
+                else if(j.includes('provinsi')) countProvinsi++;
+                else countKabKota++;
+
+                let sg = (getVal(d, 'struktur gaji') || '').toLowerCase();
+                if(sg.includes('ya') || sg.includes('ada') || sg.includes('iya')) gajiYa++;
+
+                let ins = (getVal(d, 'insentif') || '').toLowerCase();
+                let bon = (getVal(d, 'bonus') || '').toLowerCase();
+                if(ins.includes('ya') || ins.includes('ada') || ins.includes('iya')) insentifAda++;
+                if(bon.includes('ya') || bon.includes('ada') || bon.includes('iya')) bonusAda++;
+                
+                let amil = parseInt((d['Jumlah Amil'] || '0').replace(/[^0-9]/g, ''), 10);
+                if(!isNaN(amil)) totalAmil += amil;
+
+                let sert = (getVal(d, 'sertifikasi') || '').toLowerCase();
+                if(sert.includes('ya') || sert.includes('ada') || sert.includes('sudah')) countSertifikasi++;
+
+                let r = getVal(d, 'Komponen remunerasi');
+                if(r && r!=='-') r.split(',').forEach(x => { let val = x.trim(); if(val) { remCount[val] = (remCount[val]||0)+1; } });
+                
+                let b = getVal(d, 'Benefit apa saja');
+                if(b && b!=='-') b.split(',').forEach(x => { let val = x.trim(); if(val) { benCount[val] = (benCount[val]||0)+1; } });
+            });
+
+            const total = surveyData.length;
+            const pctGaji = total > 0 ? Math.round((gajiYa / total) * 100) : 0;
+            const pctInsentif = total > 0 ? Math.round((insentifAda / total) * 100) : 0;
+            const topRems = Object.entries(remCount).sort((a,b) => b[1]-a[1]).slice(0, 3).map(x => `<b>${x[0]}</b>`);
+            const topBens = Object.entries(benCount).sort((a,b) => b[1]-a[1]).slice(0, 3).map(x => `<b>${x[0]}</b>`);
+
+            const html = `
+                <div class="bg-blue-50 p-6 rounded-xl border border-blue-100 mb-6 shadow-inner">
+                    <h3 class="text-blue-800 font-bold mb-3 uppercase text-xs tracking-widest"><i class="fas fa-bullseye mr-2"></i>Key Takeaways</h3>
+                    <ul class="list-disc pl-5 text-blue-900 space-y-2 font-medium text-sm">
+                        <li><b>${total} OPZ</b> berpartisipasi (membawahi sekitar ${totalAmil.toLocaleString('id-ID')} amil).</li>
+                        <li><b>${pctGaji}% lembaga</b> telah memiliki Struktur Gaji yang baku.</li>
+                        <li>Komponen remunerasi terpopuler yang diberikan adalah ${topRems.join(', ')}.</li>
+                    </ul>
+                </div>
+                
+                <h3 class="text-lg font-bold text-slate-800 mt-6 mb-2 flex items-center gap-2"><i class="fas fa-chart-pie text-emerald-500"></i> 1. Profiling & Demografi</h3>
+                <p>Laporan analisis Reward Management ini disusun secara otomatis berdasarkan respons dari <b>${total} Organisasi Pengelola Zakat (OPZ)</b>. Dari total lembaga yang berpartisipasi, distribusinya terdiri dari <b>${countNasional} OPZ berskala Nasional</b>, <b>${countProvinsi} OPZ berskala Provinsi</b>, dan <b>${countKabKota} OPZ di tingkat Kabupaten/Kota</b>. Secara keseluruhan, seluruh lembaga ini menaungi lebih dari <b>${totalAmil.toLocaleString('id-ID')} amil</b> yang tersebar di berbagai wilayah operasional.</p>
+
+                <h3 class="text-lg font-bold text-slate-800 mt-8 mb-2 flex items-center gap-2"><i class="fas fa-wallet text-emerald-500"></i> 2. Manajemen Remunerasi (Finansial)</h3>
+                <p>Dalam hal tata kelola finansial, sebanyak <b>${pctGaji}% (${gajiYa} lembaga)</b> tercatat telah mengimplementasikan <i>Struktur dan Skala Gaji</i> yang terstandardisasi. Terkait sistem penghargaan atas performa, <b>${insentifAda} lembaga (${pctInsentif}%)</b> memiliki program Insentif Kinerja bagi amilnya, sedangkan bonus tahunan diterapkan oleh ${bonusAda} lembaga. Komponen pendapatan yang paling dominan diberikan oleh mayoritas OPZ meliputi ${topRems.join(', ')}.</p>
+
+                <h3 class="text-lg font-bold text-slate-800 mt-8 mb-2 flex items-center gap-2"><i class="fas fa-heart text-emerald-500"></i> 3. Benefit & Kesejahteraan (Non-Finansial)</h3>
+                <p>Untuk menunjang kesejahteraan amil di luar gaji pokok, lembaga-lembaga menyertakan berbagai program benefit tambahan. Berdasarkan data terbaru, benefit non-finansial yang paling banyak ditawarkan kepada amil meliputi ${topBens.join(', ')}. Program-program kesejahteraan ini dinilai sangat krusial dalam menunjang <i>employee engagement</i> dan mempertahankan motivasi amil secara jangka panjang.</p>
+                
+                <h3 class="text-lg font-bold text-slate-800 mt-8 mb-2 flex items-center gap-2"><i class="fas fa-graduation-cap text-emerald-500"></i> 4. Pengembangan Kapasitas & Kompetensi</h3>
+                <p>Sebagai upaya nyata meningkatkan profesionalisme, <b>${countSertifikasi} OPZ</b> melaporkan telah mulai menganggarkan dan memfasilitasi program sertifikasi kompetensi amil. Walaupun demikian, berbagai tantangan fundamental seperti alokasi anggaran khusus pelatihan, standarisasi sertifikasi, dan ketersediaan <i>learning roadmap</i> yang terstruktur masih menjadi area kritis yang memerlukan perhatian serta kolaborasi lebih lanjut.</p>
+            `;
+            document.getElementById('summary-content').innerHTML = html;
         }
 
         async function fetchWithFallback(url) {
