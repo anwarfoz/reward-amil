@@ -174,6 +174,29 @@
                     <!-- Injected by JS -->
                 </div>
             </div>
+
+            <!-- Unique Program Matrix Section -->
+            <div class="glass-card p-6 rounded-2xl mt-6 border-t-4 border-purple-500">
+                <div class="flex items-center gap-2 mb-6">
+                    <i class="fas fa-star text-purple-600 text-xl"></i>
+                    <h3 class="text-lg font-bold text-slate-800">Matriks Program Unik, Cerita Sukses & Lesson Learned</h3>
+                </div>
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                            <tr>
+                                <th class="px-4 py-3 border-b border-slate-300">Nama Lembaga</th>
+                                <th class="px-4 py-3 border-b border-slate-300 min-w-[200px]">Program Unik</th>
+                                <th class="px-4 py-3 border-b border-slate-300 min-w-[250px]">Cerita Sukses</th>
+                                <th class="px-4 py-3 border-b border-slate-300 min-w-[250px]">Lesson Learned</th>
+                            </tr>
+                        </thead>
+                        <tbody id="story-matrix-body" class="divide-y divide-slate-200">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- ================= TAB: SUMMARY ================= -->
@@ -855,6 +878,28 @@
                 renderList('Skala Nasional', 'blue', wawancaraNasional) +
                 renderList('Skala Provinsi', 'emerald', wawancaraProvinsi) +
                 renderList('Skala Kab/Kota', 'amber', wawancaraKabKota);
+
+            // Render Story Matrix
+            let storyHtml = '';
+            surveyData.forEach(d => {
+                let programUnik = getVal(d, 'program unik') || getVal(d, 'unik') || getVal(d, 'program') || '-';
+                let ceritaSukses = getVal(d, 'cerita sukses') || getVal(d, 'sukses') || '-';
+                let lessonLearned = getVal(d, 'lesson learned') || getVal(d, 'lesson') || getVal(d, 'pembelajaran') || '-';
+                
+                // Only show rows that actually have at least some story/program data (not just '-')
+                if (programUnik !== '-' || ceritaSukses !== '-' || lessonLearned !== '-') {
+                    storyHtml += `<tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-4 font-bold text-slate-800 bg-white align-top min-w-[150px] shadow-[2px_0_5px_rgba(0,0,0,0.02)]">${d['Nama Lembaga'] || '-'}</td>
+                        <td class="px-4 py-4 align-top whitespace-normal leading-relaxed">${programUnik}</td>
+                        <td class="px-4 py-4 align-top whitespace-normal leading-relaxed bg-emerald-50/30">${ceritaSukses}</td>
+                        <td class="px-4 py-4 align-top whitespace-normal leading-relaxed bg-amber-50/30">${lessonLearned}</td>
+                    </tr>`;
+                }
+            });
+            if (!storyHtml) {
+                storyHtml = `<tr><td colspan="4" class="px-4 py-6 text-center text-slate-400 italic">Belum ada data program unik atau cerita sukses yang tersedia</td></tr>`;
+            }
+            document.getElementById('story-matrix-body').innerHTML = storyHtml;
         }
 
         // ================= POTRET DETAIL =================
