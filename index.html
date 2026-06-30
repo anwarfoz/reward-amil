@@ -25,40 +25,59 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .tab-btn.active {
-            border-bottom: 2px solid #3b82f6;
-            color: #3b82f6;
-            font-weight: bold;
-        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden">
 
-    <!-- Navbar -->
-    <nav class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
-                        <i class="fas fa-chart-pie"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-xl font-bold text-slate-800 leading-tight">Dashboard Profiling OPZ</h1>
-                        <p class="text-xs text-slate-500">Reward Management Analysis</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4 text-sm text-slate-500">
-                    <div id="status-container" class="flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full">
-                        <i class="fas fa-sync-alt animate-spin text-blue-500" id="sync-icon" style="display:none;"></i>
-                        <span id="last-updated" class="font-medium text-xs">Belum ada data</span>
-                    </div>
-                </div>
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-20 shrink-0">
+        <div class="p-6 border-b border-slate-800 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-white font-bold shadow-md">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-bold leading-tight">Dashboard Profiling</h1>
+                <p class="text-[10px] text-teal-400">Reward Management</p>
             </div>
         </div>
-    </nav>
+        <div class="p-4 flex flex-col gap-2 flex-grow">
+            <button onclick="switchTab('overview')" id="tabbtn-overview" class="tab-btn bg-slate-800 text-white border-l-4 border-teal-400 flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl text-sm font-medium hover:bg-slate-800 hover:text-white transition-all">
+                <i class="fas fa-home w-5"></i> Dashboard Umum
+            </button>
+            <button onclick="switchTab('summary')" id="tabbtn-summary" class="tab-btn text-slate-300 flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl text-sm font-medium hover:bg-slate-800 hover:text-white transition-all">
+                <i class="fas fa-file-alt w-5"></i> Executive Summary
+            </button>
+            <button onclick="switchTab('potret')" id="tabbtn-potret" class="tab-btn text-slate-300 flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl text-sm font-medium hover:bg-slate-800 hover:text-white transition-all">
+                <i class="fas fa-id-card w-5"></i> Potret Lembaga
+            </button>
+        </div>
+        <div class="p-4 border-t border-slate-800">
+            <div id="status-container" class="flex flex-col items-center justify-center gap-1 bg-slate-800 p-3 rounded-xl">
+                <i class="fas fa-sync-alt animate-spin text-teal-400 mb-1" id="sync-icon" style="display:none;"></i>
+                <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Status Data</span>
+                <span id="last-updated" class="font-medium text-[10px] text-slate-300 text-center">Belum ada data</span>
+            </div>
+        </div>
+    </aside>
 
-    <!-- Main Content -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- Top Header: Select Lembaga -->
+        <header class="bg-white h-24 border-b border-slate-200 flex items-center justify-center px-8 shrink-0 z-10 shadow-sm relative">
+            <div class="absolute left-8 hidden md:block text-xs font-bold text-slate-400 uppercase tracking-wider">Navigasi Utama</div>
+            <div class="relative w-full max-w-2xl">
+                <select id="lembaga-select" disabled onchange="handleSelectLembaga()" class="block w-full pl-6 pr-12 py-4 text-lg border-2 border-slate-200 hover:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-500/20 rounded-2xl bg-white appearance-none font-bold text-slate-800 shadow-sm cursor-pointer transition-all">
+                    <option value="">-- Pilih Nama Lembaga --</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-6 text-slate-400">
+                    <i class="fas fa-chevron-down text-xl"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <main class="flex-1 overflow-y-auto p-6 md:p-8 w-full">
         
         <!-- Controls & Sync -->
         <div class="glass-card rounded-2xl p-6 mb-6 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -97,18 +116,7 @@
             </div>
         </div>
 
-        <!-- Tabs -->
-        <div class="border-b border-slate-200 mb-6 flex gap-6 overflow-x-auto">
-            <button onclick="switchTab('overview')" id="tabbtn-overview" class="tab-btn active pb-3 px-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors whitespace-nowrap">
-                <i class="fas fa-chart-bar mr-2"></i>Dashboard Umum
-            </button>
-            <button onclick="switchTab('summary')" id="tabbtn-summary" class="tab-btn pb-3 px-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors whitespace-nowrap">
-                <i class="fas fa-file-alt mr-2"></i>Executive Summary
-            </button>
-            <button onclick="switchTab('potret')" id="tabbtn-potret" class="tab-btn pb-3 px-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors whitespace-nowrap">
-                <i class="fas fa-id-card mr-2"></i>Potret Per Lembaga
-            </button>
-        </div>
+
 
         <!-- ================= TAB: OVERVIEW ================= -->
         <div id="tab-overview" class="space-y-6 animate-fade-in">
@@ -211,17 +219,7 @@
 
         <!-- ================= TAB: POTRET ================= -->
         <div id="tab-potret" class="hidden space-y-6 animate-fade-in">
-            <div class="glass-card p-6 rounded-2xl bg-blue-50 border-blue-100 flex flex-col md:flex-row items-center gap-4">
-                <label for="lembaga-select" class="font-bold text-blue-900 whitespace-nowrap">Pilih OPZ:</label>
-                <div class="relative w-full max-w-md">
-                    <select id="lembaga-select" disabled class="block w-full pl-4 pr-10 py-3 text-base border-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl bg-white appearance-none font-bold text-slate-800 shadow-sm cursor-pointer">
-                        <option value="">-- Load data terlebih dahulu --</option>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- Empty State for Potret -->
             <div id="empty-state" class="glass-card rounded-2xl p-16 text-center">
@@ -407,13 +405,14 @@
             </div>
         </div>
 
-    </main>
-
-    <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-500">
-            Dibuat untuk analisis Reward Management OPZ.
-        </div>
-    </footer>
+        </main>
+        
+        <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-500">
+                Dibuat untuk analisis Reward Management OPZ.
+            </div>
+        </footer>
+    </div>
 
     <script>
         // Google Sheets public CSV link
@@ -428,12 +427,34 @@
             document.getElementById('tab-overview').classList.add('hidden');
             document.getElementById('tab-potret').classList.add('hidden');
             document.getElementById('tab-summary').classList.add('hidden');
-            document.getElementById('tabbtn-overview').classList.remove('active');
-            document.getElementById('tabbtn-potret').classList.remove('active');
-            document.getElementById('tabbtn-summary').classList.remove('active');
+            
+            // Remove active styles
+            ['overview', 'potret', 'summary'].forEach(id => {
+                const btn = document.getElementById('tabbtn-' + id);
+                if(btn) {
+                    btn.classList.remove('bg-slate-800', 'text-white', 'border-l-4', 'border-teal-400');
+                    btn.classList.add('text-slate-300');
+                }
+            });
 
             document.getElementById('tab-' + tabId).classList.remove('hidden');
-            document.getElementById('tabbtn-' + tabId).classList.add('active');
+            
+            // Add active styles
+            const activeBtn = document.getElementById('tabbtn-' + tabId);
+            if(activeBtn) {
+                activeBtn.classList.remove('text-slate-300');
+                activeBtn.classList.add('bg-slate-800', 'text-white', 'border-l-4', 'border-teal-400');
+            }
+        }
+        
+        function handleSelectLembaga() {
+            const select = document.getElementById('lembaga-select');
+            if(select.value !== '') {
+                switchTab('potret');
+                renderLembagaDetail(select.value);
+            } else {
+                switchTab('overview');
+            }
         }
 
         function setStatus(msg, type='info') {
@@ -693,7 +714,7 @@
                     labels: Object.keys(countJenis),
                     datasets: [{
                         data: Object.values(countJenis),
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444']
+                        backgroundColor: ['#0d9488', '#f59e0b', '#1e293b', '#0f766e', '#fbbf24']
                     }]
                 },
                 options: { responsive: true, maintainAspectRatio: false }
@@ -713,7 +734,7 @@
                     labels: ['Ada / Ya', 'Tidak / Belum'],
                     datasets: [{
                         data: [gajiYa, gajiTidak],
-                        backgroundColor: ['#10b981', '#f43f5e']
+                        backgroundColor: ['#f59e0b', '#e2e8f0']
                     }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
@@ -735,7 +756,7 @@
                     datasets: [{
                         label: 'Jumlah Lembaga',
                         data: [insentifAda, bonusAda],
-                        backgroundColor: ['#3b82f6', '#f59e0b']
+                        backgroundColor: ['#0d9488', '#e2e8f0']
                     }]
                 },
                 options: { 
@@ -760,7 +781,7 @@
                     datasets: [{
                         label: 'Jumlah Lembaga',
                         data: Object.values(countWaktu),
-                        backgroundColor: '#8b5cf6'
+                        backgroundColor: '#0d9488'
                     }]
                 },
                 options: { 
@@ -796,7 +817,7 @@
                     datasets: [{
                         label: 'Lembaga yang Memberikan',
                         data: [...topRems.map(x=>x[1]), ...topBens.map(x=>x[1])],
-                        backgroundColor: [...topRems.map(()=>'#3b82f6'), ...topBens.map(()=>'#10b981')]
+                        backgroundColor: [...topRems.map(()=>'#0d9488'), ...topBens.map(()=>'#f59e0b')]
                     }]
                 },
                 options: { 
@@ -919,8 +940,7 @@
             });
         }
 
-        document.getElementById('lembaga-select').addEventListener('change', function(e) {
-            const idx = e.target.value;
+        function renderLembagaDetail(idx) {
             if(idx === "") {
                 document.getElementById('empty-state').classList.remove('hidden');
                 document.getElementById('dashboard-content').classList.add('hidden');
@@ -966,7 +986,7 @@
             document.getElementById('val-engagement-berdampak').textContent = getVal(data, 'berdampak pada engagement');
             document.getElementById('val-praktik-lingkungan').textContent = getVal(data, 'Praktik lingkungan kerja terbaik');
             document.getElementById('val-rekomendasi').textContent = getVal(data, 'direkomendasikan');
-        });
+        }
 
         // Event Listeners
         document.getElementById('csv-upload').addEventListener('change', handleFileUpload);
