@@ -882,9 +882,9 @@
             // Render Story Matrix
             let storyHtml = '';
             surveyData.forEach(d => {
-                let programUnik = getVal(d, 'program unik') || getVal(d, 'unik') || getVal(d, 'program') || '-';
-                let ceritaSukses = getVal(d, 'cerita sukses') || getVal(d, 'sukses') || '-';
-                let lessonLearned = getVal(d, 'lesson learned') || getVal(d, 'lesson') || getVal(d, 'pembelajaran') || '-';
+                let programUnik = getVal(d, 'sebutkan 3 program') || getVal(d, '3 program') || getVal(d, 'program unik') || '-';
+                let ceritaSukses = getVal(d, 'praktik recognition') || getVal(d, 'recognition terbaik') || getVal(d, 'cerita sukses') || '-';
+                let lessonLearned = getVal(d, 'berbagi kepada laz lain') || getVal(d, 'jika boleh berbagi') || getVal(d, 'tantangan terbesar dalam pengelolaan') || '-';
                 
                 // Only show rows that actually have at least some story/program data (not just '-')
                 if (programUnik !== '-' || ceritaSukses !== '-' || lessonLearned !== '-') {
